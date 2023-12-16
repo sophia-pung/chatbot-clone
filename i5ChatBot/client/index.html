@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot Interface</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        #response, #source {
+            white-space: pre-wrap;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        /* Additional styles can be added here */
+    </style>
+</head>
+<body>
+    <h1>Space Force Chatbot</h1>
+    <textarea id="userQuery" placeholder="Enter your query here..."></textarea>
+    <textarea id="documentText" placeholder="Text from documents..."></textarea>
+    <button onclick="submitQuery()">Submit Query</button>
+    <button onclick="askQuestion()">Ask Question</button>
+    <div id="response"></div>
+    <!-- <div id="source"></div> -->
+
+    <script>
+        function submitQuery() {
+            var userQuery = document.getElementById('userQuery').value;
+            $.ajax({
+                url: '/create-embedding',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ query: userQuery }),
+                success: function(response) {
+                    document.getElementById('documentText').value = response.closest_texts;
+                },
+                error: function(error) {
+                    console.error("Error:", error);
+                }
+            });
+        }
+
+        function askQuestion() {
+            var userQuestion = document.getElementById('userQuery').value;
+            var documentText = document.getElementById('documentText').value;
+            $.ajax({
+                url: '/ask-question',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ question: userQuestion, documentText: documentText }),
+                success: function(response) {
+                    document.getElementById('response').innerText = response.answer;
+                    // Now ask for the source pages
+                    askForSourcePages(documentText);
+                },
+                error: function(error) {
+                    console.error("Error:", error);
+                }
+            });
+        }
+
+        function askForSourcePages(documentText) {
+            $.ajax({
+                url: '/ask-question',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ question: "Which pages are these quotes from?", documentText: documentText }),
+                success: function(response) {
+                    // document.getElementById('source').innerText = "Source: " + response.answer;
+                },
+                error: function(error) {
+                    console.error("Error:", error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
